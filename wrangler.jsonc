@@ -5,7 +5,7 @@
   "compatibility_date": "2025-05-06",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
   // Static assets for admin UI (built by vite)
   "assets": {
@@ -13,53 +13,56 @@
     "not_found_handling": "single-page-application",
     "html_handling": "auto-trailing-slash",
     "binding": "ASSETS",
-    "run_worker_first": true
+    "run_worker_first": true,
   },
   // Allow importing HTML files as text modules
   "rules": [
     {
       "type": "Text",
       "globs": ["**/*.html"],
-      "fallthrough": false
-    }
+      "fallthrough": false,
+    },
   ],
   // Build command for vite
   "build": {
-    "command": "npm run build"
+    "command": "npm run build",
   },
   // Container configuration for the Clawdbot sandbox
   "containers": [
     {
       "class_name": "Sandbox",
       "image": "./Dockerfile",
-      "instance_type": "standard-1"
-    }
+      "instance_type": "standard-3",
+    },
   ],
   "durable_objects": {
     "bindings": [
       {
         "class_name": "Sandbox",
-        "name": "Sandbox"
-      }
-    ]
+        "name": "Sandbox",
+      },
+    ],
   },
   "migrations": [
     {
       "new_sqlite_classes": ["Sandbox"],
-      "tag": "v1"
-    }
+      "tag": "v1",
+    },
   ],
   // R2 bucket for persistent storage (clawdbot data, conversations, etc.)
   "r2_buckets": [
     {
       "binding": "CLAWDBOT_BUCKET",
-      "bucket_name": "clawdbot-data"
-    }
+      "bucket_name": "clawdbot-data",
+    },
   ],
   // Cron trigger to sync clawdbot data to R2 every 5 minutes
   "triggers": {
-    "crons": ["*/5 * * * *"]
-  }
+    "crons": ["*/5 * * * *"],
+  },
+  "vars": {
+    "CF_ACCOUNT_ID": "d6d80af9d563479dd9d01a10c3c3a37a",
+  },
   // Secrets to configure via `wrangler secret put`:
   // - ANTHROPIC_API_KEY: Your Anthropic API key
   // - CF_ACCESS_TEAM_DOMAIN: Cloudflare Access team domain

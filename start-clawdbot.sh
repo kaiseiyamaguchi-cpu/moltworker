@@ -56,7 +56,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
     "defaults": {
       "workspace": "/root/clawd",
       "model": {
-        "primary": "anthropic/claude-sonnet-4-20250514"
+        "primary": "anthropic/claude-opus-4-5-20251101"
       }
     }
   },
@@ -92,7 +92,20 @@ config.agents = config.agents || {};
 config.agents.defaults = config.agents.defaults || {};
 config.agents.defaults.model = config.agents.defaults.model || {};
 config.gateway = config.gateway || {};
+
+// Set default model to Opus 4.5
+config.agents.defaults.model.primary = 'anthropic/claude-opus-4-5-20251101';
 config.channels = config.channels || {};
+
+// Clean up any broken anthropic provider config from previous runs
+// (older versions didn't include required 'name' field)
+if (config.models?.providers?.anthropic?.models) {
+    const hasInvalidModels = config.models.providers.anthropic.models.some(m => !m.name);
+    if (hasInvalidModels) {
+        console.log('Removing broken anthropic provider config (missing model names)');
+        delete config.models.providers.anthropic;
+    }
+}
 
 // Gateway configuration
 config.gateway.port = 18789;
@@ -135,6 +148,24 @@ if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
     config.channels.slack.botToken = process.env.SLACK_BOT_TOKEN;
     config.channels.slack.appToken = process.env.SLACK_APP_TOKEN;
     config.channels.slack.enabled = true;
+}
+
+// Anthropic Base URL override (e.g., for Cloudflare AI Gateway)
+// Usage: Set ANTHROPIC_BASE_URL to your AI Gateway endpoint like:
+//   https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/anthropic
+if (process.env.ANTHROPIC_BASE_URL) {
+    console.log('Configuring custom Anthropic base URL:', process.env.ANTHROPIC_BASE_URL);
+    config.models = config.models || {};
+    config.models.providers = config.models.providers || {};
+    config.models.providers.anthropic = {
+        baseUrl: process.env.ANTHROPIC_BASE_URL,
+        api: 'anthropic-messages',
+        models: [
+            { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', contextWindow: 200000 },
+            { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', contextWindow: 200000 },
+            { id: 'claude-haiku-3-5-20241022', name: 'Claude Haiku 3.5', contextWindow: 200000 },
+        ]
+    };
 }
 
 // Write updated config

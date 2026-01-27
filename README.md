@@ -11,8 +11,11 @@ npm install
 # Set your Anthropic API key
 npx wrangler secret put ANTHROPIC_API_KEY
 
-# Set a gateway token (required for remote access)
-npx wrangler secret put CLAWDBOT_GATEWAY_TOKEN
+# Generate and set a gateway token (required for remote access)
+# Save this token - you'll need it to access the Control UI
+export CLAWDBOT_GATEWAY_TOKEN=$(openssl rand -base64 32 | tr -d '=+/' | head -c 32)
+echo "Your gateway token: $CLAWDBOT_GATEWAY_TOKEN"
+echo "$CLAWDBOT_GATEWAY_TOKEN" | npx wrangler secret put CLAWDBOT_GATEWAY_TOKEN
 
 # Deploy
 npm run deploy
@@ -21,10 +24,10 @@ npm run deploy
 After deploying, open the Control UI with your token:
 
 ```
-https://your-worker.workers.dev/?token=YOUR_TOKEN
+https://your-worker.workers.dev/?token=YOUR_GATEWAY_TOKEN
 ```
 
-Replace `your-worker` with your actual worker subdomain and `YOUR_TOKEN` with the token you set.
+Replace `your-worker` with your actual worker subdomain and `YOUR_GATEWAY_TOKEN` with the token you generated above.
 
 **Note:** The first request may take 1-2 minutes while the container starts.
 
@@ -221,11 +224,40 @@ npx wrangler secret put SLACK_APP_TOKEN
 npm run deploy
 ```
 
+## Cloudflare AI Gateway
+
+You can route Anthropic API requests through [Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/) for caching, rate limiting, analytics, and cost tracking.
+
+### Setup
+
+1. Create an AI Gateway in the [Cloudflare Dashboard](https://dash.cloudflare.com/) under **AI** → **AI Gateway**
+2. Set the `ANTHROPIC_BASE_URL` secret to your gateway's Anthropic endpoint:
+
+```bash
+npx wrangler secret put ANTHROPIC_BASE_URL
+# Enter: https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/anthropic
+```
+
+3. Redeploy:
+
+```bash
+npm run deploy
+```
+
+### Benefits
+
+- **Caching**: Cache identical requests to reduce costs
+- **Rate limiting**: Protect against runaway API costs
+- **Analytics**: Track token usage, costs, and latency
+- **Logging**: Full request/response logging for debugging
+- **BYOK**: Optionally store your Anthropic API key in AI Gateway instead of as a Worker secret
+
 ## All Secrets Reference
 
 | Secret | Required | Description |
 |--------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key |
+0| `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key |
+| `ANTHROPIC_BASE_URL` | No | Custom Anthropic API base URL (e.g., for [Cloudflare AI Gateway](#cloudflare-ai-gateway)) |
 | `CF_ACCESS_TEAM_DOMAIN` | Yes* | Cloudflare Access team domain (required for admin UI) |
 | `CF_ACCESS_AUD` | Yes* | Cloudflare Access application audience (required for admin UI) |
 | `CLAWDBOT_GATEWAY_TOKEN` | Yes | Gateway token for authentication (pass via `?token=` query param) |

@@ -57,6 +57,16 @@ function buildSandboxOptions(env: ClawdbotEnv): SandboxOptions {
 // Main app
 const app = new Hono<AppEnv>();
 
+// Middleware: Log every request
+app.use('*', async (c, next) => {
+  const url = new URL(c.req.url);
+  console.log(`[REQ] ${c.req.method} ${url.pathname}${url.search}`);
+  console.log(`[REQ] Has ANTHROPIC_API_KEY: ${!!c.env.ANTHROPIC_API_KEY}`);
+  console.log(`[REQ] DEV_MODE: ${c.env.DEV_MODE}`);
+  console.log(`[REQ] DEBUG_ROUTES: ${c.env.DEBUG_ROUTES}`);
+  await next();
+});
+
 // Middleware: Initialize sandbox for all requests
 app.use('*', async (c, next) => {
   const options = buildSandboxOptions(c.env);
@@ -96,11 +106,13 @@ app.all('*', async (c) => {
   const request = c.req.raw;
   const url = new URL(request.url);
 
+  console.log('[PROXY] Handling request:', url.pathname);
+
   // Ensure clawdbot is running (this will wait for startup)
   try {
     await ensureClawdbotGateway(sandbox, c.env);
   } catch (error) {
-    console.error('Failed to start Clawdbot:', error);
+    console.error('[PROXY] Failed to start Clawdbot:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     let hint = 'Check worker logs with: wrangler tail';
@@ -119,14 +131,28 @@ app.all('*', async (c) => {
 
   // Proxy to Clawdbot
   if (request.headers.get('Upgrade')?.toLowerCase() === 'websocket') {
-    console.log('Proxying WebSocket connection to Clawdbot');
-    console.log('WebSocket URL:', request.url);
-    console.log('WebSocket search params:', url.search);
-    return sandbox.wsConnect(request, CLAWDBOT_PORT);
+    console.log('[WS] Proxying WebSocket connection to Clawdbot');
+    console.log('[WS] URL:', request.url);
+    console.log('[WS] Search params:', url.search);
+    const wsResponse = await sandbox.wsConnect(request, CLAWDBOT_PORT);
+    console.log('[WS] wsConnect response status:', wsResponse.status);
+    return wsResponse;
   }
 
-  console.log('Proxying HTTP request:', url.pathname + url.search);
-  return sandbox.containerFetch(request, CLAWDBOT_PORT);
+  console.log('[HTTP] Proxying:', url.pathname + url.search);
+  const httpResponse = await sandbox.containerFetch(request, CLAWDBOT_PORT);
+  console.log('[HTTP] Response status:', httpResponse.status);
+  
+  // Add debug header to verify worker handled the request
+  const newHeaders = new Headers(httpResponse.headers);
+  newHeaders.set('X-Worker-Debug', 'proxy-to-clawdbot');
+  newHeaders.set('X-Debug-Path', url.pathname);
+  
+  return new Response(httpResponse.body, {
+    status: httpResponse.status,
+    statusText: httpResponse.statusText,
+    headers: newHeaders,
+  });
 });
 
 /**
