@@ -28,33 +28,7 @@ Replace `your-worker` with your actual worker subdomain and `YOUR_TOKEN` with th
 
 **Note:** The first request may take 1-2 minutes while the container starts. You'll also need to:
 1. [Set up Cloudflare Access](#setting-up-the-admin-ui) to protect the admin UI
-2. [Pair your device](#device-pairing-default---recommended-for-production) via the admin UI at `/_admin/`
-
-## Authentication
-
-By default, clawdbot uses **device pairing** for authentication. When a new device (browser, CLI, etc.) connects, it must be approved via the admin UI at `/_admin/`.
-
-### Device Pairing (Default - Recommended for Production)
-
-1. A device connects to the gateway
-2. The connection is held pending until approved
-3. An admin approves the device via `/_admin/`
-4. The device is now paired and can connect freely
-
-This is the most secure option as it requires explicit approval for each device.
-
-### Gateway Token (Required)
-
-A gateway token is required to access the Control UI when hosted remotely. Pass it as a query parameter:
-
-```
-https://your-worker.workers.dev/?token=YOUR_TOKEN
-wss://your-worker.workers.dev/ws?token=YOUR_TOKEN
-```
-
-**Note:** Even with a valid token, new devices still require approval via the admin UI at `/_admin/` (see Device Pairing above).
-
-For local development only, set `DEV_MODE=true` in `.dev.vars` to skip Cloudflare Access authentication and enable `allowInsecureAuth` (bypasses device pairing entirely).
+2. [Pair your device](#device-pairing) via the admin UI at `/_admin/`
 
 ## Setting Up the Admin UI
 
@@ -117,6 +91,32 @@ For local development, create a `.dev.vars` file with:
 DEV_MODE=true               # Skip Cloudflare Access auth + bypass device pairing
 DEBUG_ROUTES=true           # Enable /debug/* routes (optional)
 ```
+
+## Authentication
+
+By default, clawdbot uses **device pairing** for authentication. When a new device (browser, CLI, etc.) connects, it must be approved via the admin UI at `/_admin/`.
+
+### Device Pairing
+
+1. A device connects to the gateway
+2. The connection is held pending until approved
+3. An admin approves the device via `/_admin/`
+4. The device is now paired and can connect freely
+
+This is the most secure option as it requires explicit approval for each device.
+
+### Gateway Token (Required)
+
+A gateway token is required to access the Control UI when hosted remotely. Pass it as a query parameter:
+
+```
+https://your-worker.workers.dev/?token=YOUR_TOKEN
+wss://your-worker.workers.dev/ws?token=YOUR_TOKEN
+```
+
+**Note:** Even with a valid token, new devices still require approval via the admin UI at `/_admin/` (see Device Pairing above).
+
+For local development only, set `DEV_MODE=true` in `.dev.vars` to skip Cloudflare Access authentication and enable `allowInsecureAuth` (bypasses device pairing entirely).
 
 ## Persistent Storage (R2)
 
