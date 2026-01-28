@@ -35,8 +35,8 @@ import configErrorHtml from './assets/config-error.html';
  * Transform error messages from the gateway to be more user-friendly.
  */
 function transformErrorMessage(message: string, host: string): string {
-  if (message.includes('gateway token missing')) {
-    return `Token missing. Visit https://${host}?token={REPLACE_WITH_YOUR_TOKEN}`;
+  if (message.includes('gateway token missing') || message.includes('gateway token mismatch')) {
+    return `Invalid or missing token. Visit https://${host}?token={REPLACE_WITH_YOUR_TOKEN}`;
   }
   
   if (message.includes('pairing required')) {
