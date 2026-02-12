@@ -56,12 +56,13 @@
     },
   ],
   // R2 bucket for persistent storage (moltbot data, conversations, etc.)
-  "r2_buckets": [
-    {
-      "binding": "MOLTBOT_BUCKET",
-      "bucket_name": "moltbot-data",
-    },
-  ],
+  // Temporarily disabled - enable R2 in dashboard first, then uncomment
+  // "r2_buckets": [
+  //   {
+  //     "binding": "MOLTBOT_BUCKET",
+  //     "bucket_name": "moltbot-data",
+  //   },
+  // ],
 
   // Browser Rendering binding for CDP shim
   "browser": {
